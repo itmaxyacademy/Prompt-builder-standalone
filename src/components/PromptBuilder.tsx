@@ -494,8 +494,9 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
               />
             </div>
 
-            {/* Action Button */}
+            {/* Action Button — 3 states */}
             {!isLoggedIn ? (
+              // State 1: Not logged in
               <div className="space-y-2">
                 <div className="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm">
                   <LogIn size={18} className="text-amber-500 shrink-0" />
@@ -509,7 +510,38 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
                   Login with Maxy Academy
                 </button>
               </div>
+            ) : apiKeys.length === 0 ? (
+              // State 2: Logged in but no API keys
+              <div className="space-y-2">
+                <div className="w-full flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl text-sm">
+                  <Cpu size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Belum ada API Key</p>
+                    <p className="text-xs text-blue-700 mt-0.5">Tambahkan API key kamu (OpenAI, Gemini, LM Studio, dll) di MaxyChat terlebih dahulu.</p>
+                  </div>
+                </div>
+                <a
+                  href={`${import.meta.env.VITE_BACKEND_URL || ""}/chat`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 cursor-pointer transition-all"
+                >
+                  <ArrowRight size={18} />
+                  Tambah API Key di MaxyChat
+                </a>
+                {onRefreshModels && (
+                  <button
+                    onClick={onRefreshModels}
+                    disabled={isSyncingModels}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw size={13} className={isSyncingModels ? "animate-spin" : ""} />
+                    {isSyncingModels ? "Syncing..." : "Refresh setelah tambah API Key"}
+                  </button>
+                )}
+              </div>
             ) : (
+              // State 3: Logged in with API keys — normal flow
               <button
                 onClick={handleBuildPrompt}
                 disabled={!naivePrompt.trim() || loading}
