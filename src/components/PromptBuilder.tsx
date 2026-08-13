@@ -17,11 +17,12 @@ interface PromptBuilderProps {
   syncStatus?: string;
   onLoginRequest?: () => void;
   onManageApiKeys?: () => void;
+  onManageModels?: () => void;
 }
 
 const BACKEND_ENDPOINT = `${import.meta.env.VITE_BACKEND_URL || ""}/chat/api/chat`;
 
-export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels, isLoggedIn = false, authUser, syncStatus, onLoginRequest, onManageApiKeys }: PromptBuilderProps) {
+export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels, isLoggedIn = false, authUser, syncStatus, onLoginRequest, onManageApiKeys, onManageModels }: PromptBuilderProps) {
   const [naivePrompt, setNaivePrompt] = useState("");
   const [framework, setFramework] = useState("RTF");
   const [modelId, setModelId] = useState(models[0]?.id || "");
@@ -374,17 +375,29 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Cpu size={14} className="text-indigo-600" /> Target Model
                 </label>
-                {onRefreshModels && (
-                  <button
-                    onClick={onRefreshModels}
-                    disabled={isSyncingModels}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition-colors"
-                    title="Sync latest models from Chat backend"
-                  >
-                    <RefreshCw size={12} className={isSyncingModels ? "animate-spin text-indigo-600" : ""} />
-                    <span>{isSyncingModels ? "Syncing..." : "Sync Models"}</span>
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {onManageModels && (
+                    <button
+                      onClick={onManageModels}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                      title="Manage Custom Models & LM Studio / Ollama endpoints"
+                    >
+                      <Plus size={12} />
+                      <span>Custom / Local</span>
+                    </button>
+                  )}
+                  {onRefreshModels && (
+                    <button
+                      onClick={onRefreshModels}
+                      disabled={isSyncingModels}
+                      className="text-xs text-gray-500 hover:text-gray-800 font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition-colors"
+                      title="Sync latest models from Chat backend"
+                    >
+                      <RefreshCw size={12} className={isSyncingModels ? "animate-spin text-indigo-600" : ""} />
+                      <span>{isSyncingModels ? "Syncing..." : "Sync"}</span>
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="relative">
                 <select 

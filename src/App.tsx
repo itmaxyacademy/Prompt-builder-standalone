@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { PromptBuilder } from "./components/PromptBuilder";
 import { LoginModal } from "./components/LoginModal";
 import { ApiKeyManagerModal } from "./components/ApiKeyManagerModal";
+import { CustomModelManagerModal } from "./components/CustomModelManagerModal";
 import { DEFAULT_MODELS, UnifiedModel, ApiKey } from "./types";
 
 interface AuthUser {
@@ -24,6 +25,7 @@ export default function App() {
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [showModelModal, setShowModelModal] = useState(false);
 
   const [models, setModels] = useState<UnifiedModel[]>(() => {
     const saved = localStorage.getItem("unified_models");
@@ -83,11 +85,34 @@ export default function App() {
     }
   };
 
+  // Save Custom Models to localStorage and sync to server
+  const handleSaveModels = async (updatedModels: UnifiedModel[]) => {
+    setModels(updatedModels);
+    localStorage.setItem("unified_models", JSON.stringify(updatedModels));
+
+    // Sync to server
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
+    const userId = authUser ? (authUser.id || authUser.email || "global_default") : "global_default";
+    try {
+      await fetch(`${baseUrl}/chat/api/user/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: String(userId),
+          models: updatedModels,
+          apiKeys
+        })
+      });
+      console.log(`[Prompt Builder] Synced ${updatedModels.length} models to server for user ${userId}`);
+    } catch (e) {
+      console.warn("[Prompt Builder] Failed to sync models to server", e);
+    }
+  };
+
   const syncFromServer = useCallback(async () => {
     setIsSyncing(true);
     const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
 
-    // Get current authUser from localStorage (freshest version)
     let currentUser: AuthUser | null = null;
     try {
       const saved = localStorage.getItem("maxy_auth_user");
@@ -96,7 +121,6 @@ export default function App() {
 
     const userId = currentUser ? (currentUser.id || currentUser.email || "global_default") : "global_default";
 
-    // 1. Sync user-specific settings (models + API keys) from server
     if (userId !== "global_default") {
       try {
         const res = await fetch(
@@ -129,7 +153,6 @@ export default function App() {
       }
     }
 
-    // 2. Fallback: sync public models only
     const endpoints = [
       `${baseUrl}/chat/api/models`,
       `${baseUrl}/chat/chat.json`,
@@ -157,7 +180,6 @@ export default function App() {
     setIsSyncing(false);
   }, []);
 
-  // Re-sync when authUser changes
   useEffect(() => {
     syncFromServer();
   }, [authUser, syncFromServer]);
@@ -189,6 +211,13 @@ export default function App() {
         apiKeys={apiKeys}
         onSave={async (keys) => { await handleSaveApiKeys(keys); setShowApiKeyModal(false); }}
       />
+      <CustomModelManagerModal
+        isOpen={showModelModal}
+        onClose={() => setShowModelModal(false)}
+        models={models}
+        apiKeys={apiKeys}
+        onSaveModels={async (updatedModels) => { await handleSaveModels(updatedModels); setShowModelModal(false); }}
+      />
       <PromptBuilder
         models={models}
         apiKeys={apiKeys}
@@ -199,6 +228,7 @@ export default function App() {
         syncStatus={syncStatus}
         onLoginRequest={() => setShowLoginModal(true)}
         onManageApiKeys={() => setShowApiKeyModal(true)}
+        onManageModels={() => setShowModelModal(true)}
       />
     </div>
   );
