@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Wand2, Activity, Plus, BarChart2, Copy, Check, Sparkles, Layers, Cpu, ArrowRight } from "lucide-react";
+import { Wand2, Activity, Plus, BarChart2, Copy, Check, Sparkles, Layers, Cpu, ArrowRight, RefreshCw } from "lucide-react";
 import { UnifiedModel, ApiLog } from "../types";
 import { resolveJsonRawBody } from "../utils/placeholderResolver";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
@@ -10,11 +10,13 @@ interface PromptBuilderProps {
   models: UnifiedModel[];
   apiKeys?: any[];
   setApiLogs?: React.Dispatch<React.SetStateAction<ApiLog[]>>;
+  onRefreshModels?: () => void;
+  isSyncingModels?: boolean;
 }
 
 const BACKEND_ENDPOINT = `${import.meta.env.VITE_BACKEND_URL || ""}/chat/api/chat`;
 
-export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs }: PromptBuilderProps) {
+export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels }: PromptBuilderProps) {
   const [naivePrompt, setNaivePrompt] = useState("");
   const [framework, setFramework] = useState("RTF");
   const [modelId, setModelId] = useState(models[0]?.id || "");
@@ -334,9 +336,22 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs }: Pro
             
             {/* Target Model Selector */}
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Cpu size={14} className="text-indigo-600" /> Target Model
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Cpu size={14} className="text-indigo-600" /> Target Model
+                </label>
+                {onRefreshModels && (
+                  <button
+                    onClick={onRefreshModels}
+                    disabled={isSyncingModels}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition-colors"
+                    title="Sync latest models from Chat backend"
+                  >
+                    <RefreshCw size={12} className={isSyncingModels ? "animate-spin text-indigo-600" : ""} />
+                    <span>{isSyncingModels ? "Syncing..." : "Sync Models"}</span>
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <select 
                   value={modelId} 
