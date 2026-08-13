@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Wand2, Activity, Plus, BarChart2, Copy, Check, Sparkles, Layers, Cpu, ArrowRight, RefreshCw, LogIn, User, LogOut, Cloud } from "lucide-react";
+import { Wand2, Activity, Plus, BarChart2, Copy, Check, Sparkles, Layers, Cpu, ArrowRight, RefreshCw, LogIn, User, LogOut, Cloud, Key } from "lucide-react";
 import { UnifiedModel, ApiLog } from "../types";
 import { resolveJsonRawBody } from "../utils/placeholderResolver";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
@@ -329,13 +329,42 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Sync status badge */}
           {syncStatus && syncStatus !== "not_logged_in" && (
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
               <Cloud size={12} />
               <span>{syncStatus}</span>
             </div>
+          )}
+
+          {/* Manage API Keys shortcut button */}
+          {isLoggedIn && onManageApiKeys && (
+            <button
+              onClick={onManageApiKeys}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 text-xs font-semibold rounded-lg border border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer"
+              title="Manage API Keys"
+            >
+              <Key size={13} className="text-indigo-600" />
+              <span className="hidden sm:inline">API Keys</span>
+              {apiKeys.length > 0 && (
+                <span className="px-1.5 py-0.2 bg-indigo-600 text-white text-[10px] font-bold rounded-full">
+                  {apiKeys.length}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Manage Custom Models shortcut button */}
+          {isLoggedIn && onManageModels && (
+            <button
+              onClick={onManageModels}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 text-xs font-semibold rounded-lg border border-gray-200 hover:border-indigo-200 transition-colors cursor-pointer"
+              title="Manage Custom Models & Local Endpoints"
+            >
+              <Cpu size={13} className="text-indigo-600" />
+              <span className="hidden sm:inline">Models</span>
+            </button>
           )}
 
           {/* Login / Profile button */}
@@ -508,9 +537,9 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
               />
             </div>
 
-            {/* Action Button — 3 states */}
+            {/* Action Button Section */}
             {!isLoggedIn ? (
-              // State 1: Not logged in
+              // State 1: Not logged in -> Require Login
               <div className="space-y-2">
                 <div className="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm">
                   <LogIn size={18} className="text-amber-500 shrink-0" />
@@ -524,34 +553,42 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
                   Login with Maxy Academy
                 </button>
               </div>
-            ) : apiKeys.length === 0 ? (
-              // State 2: Logged in but no API keys
-              <div className="space-y-2">
-                <div className="w-full flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl text-sm">
-                  <Cpu size={18} className="text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold">Belum ada API Key</p>
-                    <p className="text-xs text-blue-700 mt-0.5">Tambahkan API key (OpenAI, Gemini, LM Studio, dll) untuk mulai menggunakan Enhance Prompt.</p>
+            ) : (
+              // State 2: Logged in -> Always allow Enhance Prompt
+              <div className="space-y-3">
+                <button
+                  onClick={handleBuildPrompt}
+                  disabled={!naivePrompt.trim() || loading}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all transform active:scale-[0.99]"
+                >
+                  <Wand2 size={18} className={loading ? "animate-spin" : ""} />
+                  {loading ? "Engineering Prompt..." : "Enhance Prompt"}
+                </button>
+
+                {/* Helpful quick setup shortcuts bar */}
+                <div className="flex items-center justify-between text-xs bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/70 text-indigo-900">
+                  <span className="text-gray-600 font-medium">Pengaturan Model & Key:</span>
+                  <div className="flex items-center gap-2">
+                    {onManageApiKeys && (
+                      <button
+                        onClick={onManageApiKeys}
+                        className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
+                      >
+                        <Key size={12} /> + API Key ({apiKeys.length})
+                      </button>
+                    )}
+                    <span className="text-gray-300">|</span>
+                    {onManageModels && (
+                      <button
+                        onClick={onManageModels}
+                        className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
+                      >
+                        <Plus size={12} /> + Custom/Local Model
+                      </button>
+                    )}
                   </div>
                 </div>
-                <button
-                  onClick={onManageApiKeys}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 cursor-pointer transition-all"
-                >
-                  <Plus size={18} />
-                  Tambah API Key Sekarang
-                </button>
               </div>
-            ) : (
-              // State 3: Logged in with API keys — normal flow
-              <button
-                onClick={handleBuildPrompt}
-                disabled={!naivePrompt.trim() || loading}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all transform active:scale-[0.99]"
-              >
-                <Wand2 size={18} className={loading ? "animate-spin" : ""} />
-                {loading ? "Engineering Prompt..." : "Enhance Prompt"}
-              </button>
             )}
 
           </div>
