@@ -16,11 +16,12 @@ interface PromptBuilderProps {
   authUser?: { id: number; name: string; email: string; type: string } | null;
   syncStatus?: string;
   onLoginRequest?: () => void;
+  onManageApiKeys?: () => void;
 }
 
 const BACKEND_ENDPOINT = `${import.meta.env.VITE_BACKEND_URL || ""}/chat/api/chat`;
 
-export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels, isLoggedIn = false, authUser, syncStatus, onLoginRequest }: PromptBuilderProps) {
+export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels, isLoggedIn = false, authUser, syncStatus, onLoginRequest, onManageApiKeys }: PromptBuilderProps) {
   const [naivePrompt, setNaivePrompt] = useState("");
   const [framework, setFramework] = useState("RTF");
   const [modelId, setModelId] = useState(models[0]?.id || "");
@@ -517,28 +518,16 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
                   <Cpu size={18} className="text-blue-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold">Belum ada API Key</p>
-                    <p className="text-xs text-blue-700 mt-0.5">Tambahkan API key kamu (OpenAI, Gemini, LM Studio, dll) di MaxyChat terlebih dahulu.</p>
+                    <p className="text-xs text-blue-700 mt-0.5">Tambahkan API key (OpenAI, Gemini, LM Studio, dll) untuk mulai menggunakan Enhance Prompt.</p>
                   </div>
                 </div>
-                <a
-                  href={`${import.meta.env.VITE_BACKEND_URL || ""}/chat`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-200 cursor-pointer transition-all"
+                <button
+                  onClick={onManageApiKeys}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 cursor-pointer transition-all"
                 >
-                  <ArrowRight size={18} />
-                  Tambah API Key di MaxyChat
-                </a>
-                {onRefreshModels && (
-                  <button
-                    onClick={onRefreshModels}
-                    disabled={isSyncingModels}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-                  >
-                    <RefreshCw size={13} className={isSyncingModels ? "animate-spin" : ""} />
-                    {isSyncingModels ? "Syncing..." : "Refresh setelah tambah API Key"}
-                  </button>
-                )}
+                  <Plus size={18} />
+                  Tambah API Key Sekarang
+                </button>
               </div>
             ) : (
               // State 3: Logged in with API keys — normal flow

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { PromptBuilder } from "./components/PromptBuilder";
 import { LoginModal } from "./components/LoginModal";
-import { DEFAULT_MODELS, UnifiedModel } from "./types";
+import { ApiKeyManagerModal } from "./components/ApiKeyManagerModal";
+import { DEFAULT_MODELS, UnifiedModel, ApiKey } from "./types";
 
 interface AuthUser {
   id: number;
@@ -22,6 +23,7 @@ export default function App() {
   });
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   const [models, setModels] = useState<UnifiedModel[]>(() => {
     const saved = localStorage.getItem("unified_models");
@@ -55,6 +57,30 @@ export default function App() {
     setApiKeys([]);
     localStorage.removeItem("studio_api_keys");
     setSyncStatus("");
+  };
+
+  // Save API keys to localStorage and sync to server
+  const handleSaveApiKeys = async (keys: ApiKey[]) => {
+    setApiKeys(keys);
+    localStorage.setItem("studio_api_keys", JSON.stringify(keys));
+
+    // Sync to server
+    const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
+    const userId = authUser ? (authUser.id || authUser.email || "global_default") : "global_default";
+    try {
+      await fetch(`${baseUrl}/chat/api/user/settings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: String(userId),
+          models,
+          apiKeys: keys
+        })
+      });
+      console.log(`[Prompt Builder] Synced ${keys.length} API keys to server for user ${userId}`);
+    } catch (e) {
+      console.warn("[Prompt Builder] Failed to sync API keys to server", e);
+    }
   };
 
   const syncFromServer = useCallback(async () => {
@@ -157,6 +183,12 @@ export default function App() {
         onLogin={handleLogin}
         onLogout={handleLogout}
       />
+      <ApiKeyManagerModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+        apiKeys={apiKeys}
+        onSave={async (keys) => { await handleSaveApiKeys(keys); setShowApiKeyModal(false); }}
+      />
       <PromptBuilder
         models={models}
         apiKeys={apiKeys}
@@ -166,6 +198,7 @@ export default function App() {
         authUser={authUser}
         syncStatus={syncStatus}
         onLoginRequest={() => setShowLoginModal(true)}
+        onManageApiKeys={() => setShowApiKeyModal(true)}
       />
     </div>
   );

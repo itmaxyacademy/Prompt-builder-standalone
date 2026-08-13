@@ -3,6 +3,12 @@ export interface KeyValuePair {
   value: string;
 }
 
+export interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+}
+
 export interface UnifiedModel {
   id: string;
   name: string;
