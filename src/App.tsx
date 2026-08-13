@@ -1,19 +1,35 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { PromptBuilder } from "./components/PromptBuilder";
+import { LoginModal } from "./components/LoginModal";
 import { DEFAULT_MODELS, UnifiedModel } from "./types";
 
+interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  type: string;
+  profile_picture: string | null;
+  phone: string | null;
+  token?: string;
+}
+
 export default function App() {
+  const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem("maxy_auth_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const [models, setModels] = useState<UnifiedModel[]>(() => {
     const saved = localStorage.getItem("unified_models");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      } catch (err) {
-        console.error("Failed to parse local models", err);
-      }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
     }
     return DEFAULT_MODELS;
   });
@@ -22,33 +38,39 @@ export default function App() {
     try {
       const saved = localStorage.getItem("studio_api_keys");
       return saved ? JSON.parse(saved) : [];
-    } catch (err) {
-      console.error("Failed to parse local API keys", err);
-      return [];
-    }
+    } catch { return []; }
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>("");
 
-  // Get logged-in user from MaxyChat localStorage (shared same domain)
-  const getAuthUser = () => {
-    try {
-      const saved = localStorage.getItem("maxy_auth_user");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
+  const handleLogin = (user: AuthUser) => {
+    setAuthUser(user);
+    localStorage.setItem("maxy_auth_user", JSON.stringify(user));
   };
 
-  // Sync models AND API keys from MaxyChat server using same user identity
+  const handleLogout = () => {
+    setAuthUser(null);
+    localStorage.removeItem("maxy_auth_user");
+    setApiKeys([]);
+    localStorage.removeItem("studio_api_keys");
+    setSyncStatus("");
+  };
+
   const syncFromServer = useCallback(async () => {
     setIsSyncing(true);
     const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
-    const authUser = getAuthUser();
-    const userId = authUser ? (authUser.id || authUser.email || "global_default") : "global_default";
 
-    // 1. Try to sync user-specific settings (models + API keys) from server
+    // Get current authUser from localStorage (freshest version)
+    let currentUser: AuthUser | null = null;
+    try {
+      const saved = localStorage.getItem("maxy_auth_user");
+      currentUser = saved ? JSON.parse(saved) : null;
+    } catch {}
+
+    const userId = currentUser ? (currentUser.id || currentUser.email || "global_default") : "global_default";
+
+    // 1. Sync user-specific settings (models + API keys) from server
     if (userId !== "global_default") {
       try {
         const res = await fetch(
@@ -64,16 +86,14 @@ export default function App() {
             if (Array.isArray(serverModels) && serverModels.length > 0) {
               setModels(serverModels as UnifiedModel[]);
               localStorage.setItem("unified_models", JSON.stringify(serverModels));
-              console.log(`[Prompt Builder Sync] Loaded ${serverModels.length} models for user ${userId}`);
             }
 
             if (Array.isArray(serverApiKeys) && serverApiKeys.length > 0) {
               setApiKeys(serverApiKeys);
               localStorage.setItem("studio_api_keys", JSON.stringify(serverApiKeys));
-              console.log(`[Prompt Builder Sync] Loaded ${serverApiKeys.length} API keys for user ${userId}`);
             }
 
-            setSyncStatus(`Synced as ${authUser?.name || authUser?.email || userId}`);
+            setSyncStatus(`Synced as ${currentUser?.name || currentUser?.email || userId}`);
             setIsSyncing(false);
             return;
           }
@@ -83,7 +103,7 @@ export default function App() {
       }
     }
 
-    // 2. Fallback: sync public models list only (user not logged in)
+    // 2. Fallback: sync public models only
     const endpoints = [
       `${baseUrl}/chat/api/models`,
       `${baseUrl}/chat/chat.json`,
@@ -101,47 +121,51 @@ export default function App() {
           if (Array.isArray(modelsList) && modelsList.length > 0) {
             setModels(modelsList);
             localStorage.setItem("unified_models", JSON.stringify(modelsList));
-            setSyncStatus("Synced public models (not logged in)");
-            console.log(`[Model Sync] Loaded ${modelsList.length} public models from ${endpoint}`);
+            setSyncStatus("not_logged_in");
             break;
           }
         }
-      } catch (e) {
-        // Fallback to next endpoint
-      }
+      } catch {}
     }
 
     setIsSyncing(false);
   }, []);
 
+  // Re-sync when authUser changes
   useEffect(() => {
     syncFromServer();
+  }, [authUser, syncFromServer]);
 
-    // Re-sync when user returns to Prompt Builder tab
+  useEffect(() => {
     const handleFocus = () => syncFromServer();
     window.addEventListener("focus", handleFocus);
-
-    // Periodic sync every 30 seconds
     const interval = setInterval(syncFromServer, 30000);
-
     return () => {
       window.removeEventListener("focus", handleFocus);
       clearInterval(interval);
     };
   }, [syncFromServer]);
 
+  const isLoggedIn = !!authUser;
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {syncStatus && (
-        <div className="text-xs text-center py-1 bg-green-50 text-green-700 border-b border-green-100">
-          ☁️ {syncStatus}
-        </div>
-      )}
-      <PromptBuilder 
-        models={models} 
-        apiKeys={apiKeys} 
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        user={authUser}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+      />
+      <PromptBuilder
+        models={models}
+        apiKeys={apiKeys}
         onRefreshModels={syncFromServer}
         isSyncingModels={isSyncing}
+        isLoggedIn={isLoggedIn}
+        authUser={authUser}
+        syncStatus={syncStatus}
+        onLoginRequest={() => setShowLoginModal(true)}
       />
     </div>
   );

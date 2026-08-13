@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Wand2, Activity, Plus, BarChart2, Copy, Check, Sparkles, Layers, Cpu, ArrowRight, RefreshCw } from "lucide-react";
+import { Wand2, Activity, Plus, BarChart2, Copy, Check, Sparkles, Layers, Cpu, ArrowRight, RefreshCw, LogIn, User, LogOut, Cloud } from "lucide-react";
 import { UnifiedModel, ApiLog } from "../types";
 import { resolveJsonRawBody } from "../utils/placeholderResolver";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
@@ -12,11 +12,15 @@ interface PromptBuilderProps {
   setApiLogs?: React.Dispatch<React.SetStateAction<ApiLog[]>>;
   onRefreshModels?: () => void;
   isSyncingModels?: boolean;
+  isLoggedIn?: boolean;
+  authUser?: { id: number; name: string; email: string; type: string } | null;
+  syncStatus?: string;
+  onLoginRequest?: () => void;
 }
 
 const BACKEND_ENDPOINT = `${import.meta.env.VITE_BACKEND_URL || ""}/chat/api/chat`;
 
-export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels }: PromptBuilderProps) {
+export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRefreshModels, isSyncingModels, isLoggedIn = false, authUser, syncStatus, onLoginRequest }: PromptBuilderProps) {
   const [naivePrompt, setNaivePrompt] = useState("");
   const [framework, setFramework] = useState("RTF");
   const [modelId, setModelId] = useState(models[0]?.id || "");
@@ -324,6 +328,35 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Sync status badge */}
+          {syncStatus && syncStatus !== "not_logged_in" && (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
+              <Cloud size={12} />
+              <span>{syncStatus}</span>
+            </div>
+          )}
+
+          {/* Login / Profile button */}
+          {isLoggedIn && authUser ? (
+            <button
+              onClick={onLoginRequest}
+              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full border border-indigo-200 transition-colors cursor-pointer"
+            >
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold">
+                {authUser.name?.charAt(0).toUpperCase()}
+              </div>
+              <span className="hidden sm:inline">{authUser.name}</span>
+            </button>
+          ) : (
+            <button
+              onClick={onLoginRequest}
+              className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-sm shadow-indigo-200 transition-colors cursor-pointer"
+            >
+              <LogIn size={13} />
+              <span>Login</span>
+            </button>
+          )}
+
           <InstallPWAButton />
         </div>
       </header>
@@ -462,14 +495,30 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
             </div>
 
             {/* Action Button */}
-            <button 
-              onClick={handleBuildPrompt}
-              disabled={!naivePrompt.trim() || loading}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all transform active:scale-[0.99]"
-            >
-              <Wand2 size={18} className={loading ? "animate-spin" : ""} />
-              {loading ? "Engineering Prompt..." : "Enhance Prompt"}
-            </button>
+            {!isLoggedIn ? (
+              <div className="space-y-2">
+                <div className="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm">
+                  <LogIn size={18} className="text-amber-500 shrink-0" />
+                  <span className="font-medium">Login required to use <strong>Enhance Prompt</strong></span>
+                </div>
+                <button
+                  onClick={onLoginRequest}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 cursor-pointer transition-all"
+                >
+                  <LogIn size={18} />
+                  Login with Maxy Academy
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleBuildPrompt}
+                disabled={!naivePrompt.trim() || loading}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-3.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:shadow-indigo-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all transform active:scale-[0.99]"
+              >
+                <Wand2 size={18} className={loading ? "animate-spin" : ""} />
+                {loading ? "Engineering Prompt..." : "Enhance Prompt"}
+              </button>
+            )}
 
           </div>
         </div>
