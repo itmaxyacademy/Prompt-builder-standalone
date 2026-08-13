@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { X, Plus, Trash2, Eye, EyeOff, Key, Check, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Plus, Trash2, Eye, EyeOff, Key, Check, AlertCircle, Edit2 } from "lucide-react";
 import { ApiKey } from "../types";
 
 interface ApiKeyManagerModalProps {
@@ -17,6 +17,15 @@ export function ApiKeyManagerModal({ isOpen, onClose, apiKeys, onSave }: ApiKeyM
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit state
+  const [editingKeyId, setEditingKeyId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editKeyValue, setEditKeyValue] = useState("");
+
+  useEffect(() => {
+    setKeys(apiKeys);
+  }, [apiKeys]);
 
   if (!isOpen) return null;
 
@@ -42,6 +51,28 @@ export function ApiKeyManagerModal({ isOpen, onClose, apiKeys, onSave }: ApiKeyM
 
   const toggleShow = (id: string) => {
     setShowKey(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const startEdit = (k: ApiKey) => {
+    setEditingKeyId(k.id);
+    setEditName(k.name);
+    setEditKeyValue(k.key);
+  };
+
+  const cancelEdit = () => {
+    setEditingKeyId(null);
+    setEditName("");
+    setEditKeyValue("");
+  };
+
+  const saveEdit = (id: string) => {
+    if (!editName.trim() || !editKeyValue.trim()) {
+      setError("Nama dan API Key tidak boleh kosong.");
+      return;
+    }
+    setKeys(prev => prev.map(k => (k.id === id ? { ...k, name: editName.trim(), key: editKeyValue.trim() } : k)));
+    setEditingKeyId(null);
+    setError(null);
   };
 
   const maskKey = (key: string) => {
@@ -80,19 +111,58 @@ export function ApiKeyManagerModal({ isOpen, onClose, apiKeys, onSave }: ApiKeyM
             <div className="space-y-2">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Saved Keys ({keys.length})</p>
               {keys.map(k => (
-                <div key={k.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">{k.name}</p>
-                    <p className="text-xs text-gray-400 font-mono truncate">
-                      {showKey[k.id] ? k.key : maskKey(k.key)}
-                    </p>
-                  </div>
-                  <button onClick={() => toggleShow(k.id)} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors shrink-0">
-                    {showKey[k.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </button>
-                  <button onClick={() => handleDelete(k.id)} className="p-1.5 text-red-400 hover:text-red-600 transition-colors shrink-0">
-                    <Trash2 size={14} />
-                  </button>
+                <div key={k.id} className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2">
+                  {editingKeyId === k.id ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                          className="flex-1 bg-white border border-indigo-300 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                          placeholder="Nama API Key"
+                        />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={cancelEdit} className="p-1 text-gray-400 hover:text-gray-600 transition-colors" title="Batal">
+                            <X size={16} />
+                          </button>
+                          <button onClick={() => saveEdit(k.id)} className="p-1 text-emerald-600 hover:text-emerald-700 transition-colors" title="Simpan Perubahan">
+                            <Check size={16} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type={showKey[k.id] ? "text" : "password"}
+                          value={editKeyValue}
+                          onChange={e => setEditKeyValue(e.target.value)}
+                          className="flex-1 bg-white border border-indigo-300 rounded-lg px-2.5 py-1.5 text-xs font-mono text-gray-700 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                          placeholder="API Key Secret"
+                        />
+                        <button onClick={() => toggleShow(k.id)} className="p-1 text-gray-400 hover:text-gray-700 transition-colors shrink-0">
+                          {showKey[k.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-800 truncate">{k.name}</p>
+                        <p className="text-xs text-gray-400 font-mono truncate">
+                          {showKey[k.id] ? k.key : maskKey(k.key)}
+                        </p>
+                      </div>
+                      <button onClick={() => toggleShow(k.id)} className="p-1.5 text-gray-400 hover:text-gray-700 transition-colors shrink-0" title="Lihat Key">
+                        {showKey[k.id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                      <button onClick={() => startEdit(k)} className="p-1.5 text-gray-400 hover:text-indigo-600 transition-colors shrink-0" title="Edit Key">
+                        <Edit2 size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(k.id)} className="p-1.5 text-red-400 hover:text-red-600 transition-colors shrink-0" title="Hapus Key">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
