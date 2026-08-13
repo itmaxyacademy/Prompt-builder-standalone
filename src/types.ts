@@ -32,6 +32,7 @@ export interface UnifiedModel {
   maxTokensLimit?: number;
   sizeOptions?: string[];
   labels?: string[];
+  _isCustom?: boolean;
 }
 
 export interface ApiLog {
