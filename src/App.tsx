@@ -18,6 +18,16 @@ export default function App() {
     return DEFAULT_MODELS;
   });
 
+  const [apiKeys] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("studio_api_keys");
+      return saved ? JSON.parse(saved) : [];
+    } catch (err) {
+      console.error("Failed to parse local API keys", err);
+      return [];
+    }
+  });
+
   useEffect(() => {
     const syncModels = async () => {
       const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
@@ -53,7 +63,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <PromptBuilder models={models} />
+      <PromptBuilder models={models} apiKeys={apiKeys} />
     </div>
   );
 }
