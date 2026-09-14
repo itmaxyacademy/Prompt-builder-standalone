@@ -3,6 +3,7 @@ import { PromptBuilder } from "./components/PromptBuilder";
 import { LoginModal } from "./components/LoginModal";
 import { ApiKeyManagerModal } from "./components/ApiKeyManagerModal";
 import { CustomModelManagerModal } from "./components/CustomModelManagerModal";
+import { PWAUpdateToast } from "./components/PWAUpdateToast";
 import { DEFAULT_MODELS, UnifiedModel, ApiKey } from "./types";
 
 interface AuthUser {
@@ -230,6 +231,7 @@ export default function App() {
         onManageApiKeys={() => setShowApiKeyModal(true)}
         onManageModels={() => setShowModelModal(true)}
       />
+      <PWAUpdateToast />
     </div>
   );
 }

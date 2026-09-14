@@ -4,6 +4,7 @@ import { UnifiedModel, ApiLog } from "../types";
 import { resolveJsonRawBody } from "../utils/placeholderResolver";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { InstallPWAButton } from "./InstallPWAButton";
+import { APP_VERSION } from "../version";
 
 interface PromptBuilderProps {
   onClose?: () => void;
@@ -323,6 +324,9 @@ export function PromptBuilder({ onClose, models, apiKeys = [], setApiLogs, onRef
               <h1 className="text-xl font-bold text-gray-900 tracking-tight">Prompt Builder</h1>
               <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200">
                 PRO ENGINE
+              </span>
+              <span className="px-2 py-0.5 text-[10px] font-semibold text-gray-600 bg-gray-100/90 rounded-full border border-gray-200 shadow-2xs" title={`Versi Aplikasi: v${APP_VERSION}`}>
+                v{APP_VERSION}
               </span>
             </div>
             <p className="text-xs text-gray-500 font-normal">Transform naive prompts into structured engineering frameworks</p>

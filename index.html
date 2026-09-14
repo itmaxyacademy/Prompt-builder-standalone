@@ -35,17 +35,47 @@
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
 
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker Registration with Auto-Update Detection -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('./service-worker.js')
             .then(function(reg) {
               console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+              window.pwaRegistration = reg;
+
+              // Check if a worker is already waiting
+              if (reg.waiting) {
+                console.log('[PWA] Update already waiting on load');
+                window.dispatchEvent(new CustomEvent('pwa-update-available', { detail: { registration: reg } }));
+              }
+
+              // Listen for incoming update
+              reg.addEventListener('updatefound', function() {
+                var newWorker = reg.installing;
+                if (newWorker) {
+                  newWorker.addEventListener('statechange', function() {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                      console.log('[PWA] New version installed and waiting activation');
+                      window.dispatchEvent(new CustomEvent('pwa-update-available', { detail: { registration: reg } }));
+                    }
+                  });
+                }
+              });
             })
             .catch(function(err) {
               console.error('[PWA] ServiceWorker registration failed:', err);
             });
+
+          // Handle seamless controller change
+          var refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', function() {
+            if (!refreshing) {
+              refreshing = true;
+              console.log('[PWA] New controller active, reloading page...');
+              window.location.reload();
+            }
+          });
         });
       }
     </script>

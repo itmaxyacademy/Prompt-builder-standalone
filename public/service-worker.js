@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prompt-builder-pwa-v2';
+const CACHE_NAME = 'prompt-builder-pwa-v1.0.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -12,8 +12,14 @@ const ASSETS_TO_CACHE = [
   './splash-wide.png'
 ];
 
+// Listen for SKIP_WAITING message from client update toast
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Pre-caching static assets for Prompt Builder');
@@ -47,11 +53,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests and API routes
+  // Skip non-GET requests, API routes, and version.json (always network-direct)
   if (
     request.method !== 'GET' ||
     url.pathname.includes('/api/') ||
-    url.pathname.includes('/chat/api/')
+    url.pathname.includes('/chat/api/') ||
+    url.pathname.endsWith('version.json')
   ) {
     return;
   }

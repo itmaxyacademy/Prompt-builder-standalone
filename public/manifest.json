@@ -1,6 +1,7 @@
 {
   "name": "Prompt Builder - AI Studio",
   "short_name": "PromptBuilder",
+  "version": "1.0.0",
   "description": "Transform naive prompts into structured engineering frameworks",
   "start_url": "./",
   "scope": "./",
