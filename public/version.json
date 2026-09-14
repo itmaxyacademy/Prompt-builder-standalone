@@ -1,6 +1,6 @@
 {
   "appName": "Prompt Builder - AI Studio",
-  "version": "1.0.0",
-  "buildTime": "2026-09-14T21:40:00.000Z",
-  "releaseNotes": "Versi awal dengan dukungan PWA, manifest versioning, dan auto-detect update."
+  "version": "1.0.1",
+  "buildTime": "2026-09-14T22:10:00.000Z",
+  "releaseNotes": "Pembaruan v1.0.1: Uji coba deteksi update otomatis & toast notifikasi PWA."
 }
