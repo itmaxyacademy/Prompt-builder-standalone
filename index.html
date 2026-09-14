@@ -4,22 +4,48 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Prompt Builder - AI Studio</title>
+    <meta name="description" content="Transform naive prompts into structured engineering frameworks - Maxy Academy" />
+    
+    <!-- PWA Web App Manifest & Mobile Theme -->
     <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#4f46e5" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="PromptBuilder" />
-    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png" />
+
+    <!-- Early PWA Prompt Listener -->
+    <script>
+      window.deferredPWAInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredPWAInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+        console.log('[PWA] beforeinstallprompt captured globally');
+      });
+    </script>
   </head>
   <body class="bg-gray-50 antialiased text-gray-900">
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
+
+    <!-- PWA Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
+        window.addEventListener('load', function() {
           navigator.serviceWorker.register('./service-worker.js')
-            .then(reg => console.log('[PWA] ServiceWorker registered:', reg.scope))
-            .catch(err => console.error('[PWA] ServiceWorker registration failed:', err));
+            .then(function(reg) {
+              console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+            })
+            .catch(function(err) {
+              console.error('[PWA] ServiceWorker registration failed:', err);
+            });
         });
       }
     </script>
