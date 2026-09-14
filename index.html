@@ -35,19 +35,13 @@
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
 
-    <!-- PWA Service Worker Registration & Auto-Update -->
+    <!-- PWA Service Worker Registration -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('./service-worker.js')
             .then(function(reg) {
               console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
-              // Auto-check for updates whenever the PWA is brought to foreground
-              document.addEventListener('visibilitychange', function() {
-                if (document.visibilityState === 'visible') {
-                  reg.update();
-                }
-              });
             })
             .catch(function(err) {
               console.error('[PWA] ServiceWorker registration failed:', err);

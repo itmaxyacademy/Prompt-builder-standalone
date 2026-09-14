@@ -73,26 +73,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Navigation (HTML document): Network-First so app updates immediately when reopened
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(request).then((cachedResponse) => {
-            return cachedResponse || caches.match('./index.html');
-          });
-        })
-    );
-    return;
-  }
-
   // Static Assets with Cache-first & Network fallback
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
@@ -110,7 +90,9 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Offline fallback
+          if (request.mode === 'navigate') {
+            return caches.match('./index.html');
+          }
         });
     })
   );
