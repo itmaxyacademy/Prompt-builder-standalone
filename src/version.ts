@@ -8,14 +8,26 @@ export interface AppVersionInfo {
   releaseNotes?: string;
 }
 
+export function isDeviceOnline(): boolean {
+  return typeof navigator !== "undefined" ? navigator.onLine : true;
+}
+
 /**
  * Check if a new version is available on the server by fetching version.json
+ * Automatically skips check when device is offline.
  */
 export async function fetchRemoteVersion(): Promise<AppVersionInfo | null> {
+  if (!isDeviceOnline()) {
+    return null;
+  }
+
   try {
     const res = await fetch(`./version.json?t=${Date.now()}`, {
       cache: "no-store",
-      headers: { "Cache-Control": "no-cache" }
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache"
+      }
     });
     if (res.ok) {
       return (await res.json()) as AppVersionInfo;

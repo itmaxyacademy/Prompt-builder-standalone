@@ -62,6 +62,23 @@
                   });
                 }
               });
+
+              // Check for updates when device goes online
+              window.addEventListener('online', function() {
+                console.log('[PWA] Device went online, checking SW updates...');
+                reg.update().catch(function(err) {
+                  console.debug('[PWA] Update check failed:', err);
+                });
+              });
+
+              // Check when returning to active tab and online
+              document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible' && navigator.onLine) {
+                  reg.update().catch(function(err) {
+                    console.debug('[PWA] Visibility update check failed:', err);
+                  });
+                }
+              });
             })
             .catch(function(err) {
               console.error('[PWA] ServiceWorker registration failed:', err);
