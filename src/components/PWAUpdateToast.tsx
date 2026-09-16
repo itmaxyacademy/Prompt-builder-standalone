@@ -74,6 +74,19 @@ export function PWAUpdateToast({ onDismiss }: PWAUpdateToastProps) {
     }, 1200);
   }, [triggerUpdate]);
 
+  const checkForWaitingWorker = useCallback(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg?.waiting) {
+          console.log('[PWA Update] Detected waiting worker, triggering auto-update...');
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          setWaitingWorker(reg.waiting);
+          scheduleAutoUpdate('latest', reg.waiting);
+        }
+      });
+    }
+  }, [scheduleAutoUpdate]);
+
   const checkVersionFromServer = useCallback(async () => {
     if (!isDeviceOnline()) {
       return;
@@ -109,6 +122,7 @@ export function PWAUpdateToast({ onDismiss }: PWAUpdateToastProps) {
     };
 
     window.addEventListener("pwa-update-available", handleUpdateAvailable);
+    checkForWaitingWorker();
 
     // 2. Initial check when online
     if (isDeviceOnline()) {

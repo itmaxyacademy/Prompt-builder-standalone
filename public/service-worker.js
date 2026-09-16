@@ -20,6 +20,7 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Pre-caching static assets for Prompt Builder');
