@@ -320,6 +320,7 @@ export function CustomModelManagerModal({ isOpen, onClose, models, apiKeys, onSa
           body: bodyParams,
           stream: false,
           responseTextPath: formData.responseTextPath || "choices.0.message.content",
+          timeout: formData.timeout || 60,
           provider: isNativeGeminiFallback ? "gemini" : undefined,
           apiKey: activeKey,
           model: formData.id,
@@ -482,6 +483,25 @@ export function CustomModelManagerModal({ isOpen, onClose, models, apiKeys, onSa
                       <option key={k.id} value={k.id}>{k.name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Request Timeout</label>
+                    <span className="text-[10px] text-gray-400 font-mono">Default: 60s</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={5}
+                      max={600}
+                      value={formData.timeout || ""}
+                      onChange={e => setFormData({ ...formData, timeout: e.target.value === "" ? undefined : Math.max(5, parseInt(e.target.value) || 60) })}
+                      placeholder="60"
+                      className="w-full bg-white border border-gray-300 rounded-xl px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                    />
+                    <span className="text-xs text-gray-500 whitespace-nowrap">detik</span>
+                  </div>
                 </div>
               </div>
 

@@ -32,6 +32,7 @@ export interface UnifiedModel {
   maxTokensLimit?: number;
   sizeOptions?: string[];
   labels?: string[];
+  timeout?: number;
   _isCustom?: boolean;
 }
 
